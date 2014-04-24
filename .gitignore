@@ -2,3 +2,4 @@ data/*
 bin/**
 .DS_STORE
 languageModel
+noisyChannel
