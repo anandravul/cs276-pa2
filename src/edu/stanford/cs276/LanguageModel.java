@@ -8,39 +8,33 @@ import java.io.FileReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import edu.stanford.cs276.util.Pair;
+import edu.stanford.cs276.util.Dictionary;
 
 
 public class LanguageModel implements Serializable {
 
 	private static LanguageModel lm_;
-	// Dictionary of word to wordID
-	private HashMap<String, Integer> _dictionary;
-	private HashMap<Integer, Double> _unigramProbs;
-	private HashMap<Pair<Integer, Integer>, Double> _bigramProbs;
+	private Dictionary _unigramCounts;
+	private Dictionary _bigramCounts;
 	private static final double LAMBDA = 0.1;
 	
 	
 	// Do not call constructor directly since this is a Singleton
 	private LanguageModel(String corpusFilePath) throws Exception {
-		_dictionary = new HashMap<String, Integer>();
-		_unigramProbs = new HashMap<Integer, Double>();
-		_bigramProbs = new HashMap<Pair<Integer, Integer>, Double>();
+		_bigramCounts = new Dictionary();
+		_unigramCounts = new Dictionary();
 		constructDictionaries(corpusFilePath);
 		save();
 	}
 
 
+	/**
+	 * Reads in corpus and constructs dictionaries of unigram and bigram counts.
+	 * @param corpusFilePath
+	 * @throws Exception
+	 */
 	public void constructDictionaries(String corpusFilePath)
 			throws Exception {
-		HashMap<Integer, Integer> unigramCounts = new HashMap<Integer, Integer>();
-		HashMap<Pair<Integer, Integer>, Integer> bigramCounts = new HashMap<Pair<Integer, Integer>, Integer>();
-		int _numTokens = 0;
-		int _wordID = 0;
 
 		System.out.println("Constructing dictionaries...");
 		File dir = new File(corpusFilePath);
@@ -54,63 +48,36 @@ public class LanguageModel implements Serializable {
 			while ((line = input.readLine()) != null) {
 				String[] words = line.split(" ");
 				for (int i = 0; i < words.length; i++) {
-					_numTokens++;
 					// Put word in dictionary
-					if (!_dictionary.containsKey(words[i])) {
-						_dictionary.put(words[i], _wordID++);
-					}
+					_unigramCounts.add(words[i]);
 					
-					int wordID = _dictionary.get(words[i]);
-					
-					// Update unigram counts
-					if (unigramCounts.containsKey(words[i])) {
-						unigramCounts.put(wordID, unigramCounts.get(words[i]) + 1);
-					} else {
-						unigramCounts.put(wordID, 1);
-					}
 					if (i + 1 < words.length) {
-						if (!_dictionary.containsKey(words[i + 1])) {
-							_dictionary.put(words[i + 1], _wordID++);
-						}
-						int secondWordID = _dictionary.get(words[i + 1]);
-						Pair<Integer, Integer> bigram = new Pair<Integer, Integer>(wordID, secondWordID);
-						if (bigramCounts.containsKey(bigram)) {
-							bigramCounts.put(bigram, bigramCounts.get(bigram) + 1);
-						} else {
-							bigramCounts.put(bigram, 1);
-						}
+						_bigramCounts.add(words[i] + " " + words[i + 1]);
 					}
 				}
 			}
 			input.close();
-			
-			// Compute probabilities from counts
-			// Unigrams
-			for (Entry<Integer, Integer> entry : unigramCounts.entrySet()) {
-				_unigramProbs.put(entry.getKey(), (double) entry.getValue() / _numTokens);
-			}
-			// Bigrams
-			for (Entry<Pair<Integer, Integer>, Integer> entry : bigramCounts.entrySet()) {
-				Pair<Integer, Integer> bigram = entry.getKey();
-				int unigramCount = unigramCounts.get(bigram.getFirst());
-				_bigramProbs.put(bigram, (double) entry.getValue() / unigramCount);
-			}
 		}
 		System.out.println("Done.");
 	}
 	
 	/**
-	 * Returns the log interpolated conditional probability of bigram.getSecond | bigram.getFirst
+	 * Computes the probability of a term as count(term)/termCount
+	 * @param w
+	 * @return
+	 */
+	private double unigramProbability(String w) {
+		return (double) _unigramCounts.count(w) / _unigramCounts.termCount();
+	}
+	
+	/**
+	 * Returns the log interpolated conditional probability of w2 | w1
 	 * @param bigram
 	 * @return
 	 */
 	private double bigramProbability(String w1, String w2) {
-		int w1ID = _dictionary.get(w1);
-		int w2ID = _dictionary.get(w2);
-		Pair<Integer, Integer> bigram = new Pair<Integer, Integer>(w1ID, w2ID);
-
-		double unigramProbability = _unigramProbs.get(bigram.getSecond()); // P(w2)
-		double bigramProbability = _bigramProbs.get(bigram); 			   // P(w2|w1)
+		double unigramProbability = unigramProbability(w1); // P(w2)
+		double bigramProbability =  (double) _bigramCounts.count(w1 + " " + w2) / _unigramCounts.count(w1); 			   // P(w2|w1)
 
 		return Math.log(LAMBDA * unigramProbability + (1 - LAMBDA) * bigramProbability);
 	}
@@ -121,7 +88,7 @@ public class LanguageModel implements Serializable {
 	 * @return
 	 */
 	public double queryProbability(String[] words) {
-		double p = _unigramProbs.get(words[0]);
+		double p = unigramProbability(words[0]);
 		for (int i = 0; i < words.length - 1; i++) {
 			p += bigramProbability(words[i], words[i+1]);
 		}

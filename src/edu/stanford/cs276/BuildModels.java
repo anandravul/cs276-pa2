@@ -29,11 +29,12 @@ public class BuildModels {
 		System.out.println("training corpus: " + args[0]);
 
 		languageModel =  LanguageModel.create(trainingCorpus);
+		languageModel.save();
+
 		noisyChannelModel = NoisyChannelModel.create(editsFile);
 
 		// Save the models to disk
 		noisyChannelModel.save();
-		languageModel.save();
 		
 		if ("extra".equals(extra)) {
 			/*
