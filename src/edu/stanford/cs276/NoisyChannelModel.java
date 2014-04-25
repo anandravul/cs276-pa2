@@ -14,12 +14,10 @@ public class NoisyChannelModel implements Serializable {
 	EmpiricalCostModel empiricalCostModel = null;
 	UniformCostModel uniformCostModel = null;
 	
-	/* Feel free to add more members here.
-	 * You need to implement more methods here as needed.
-	 * 
-	 * Your code here ...
-	 */
-	
+	public double getEditProbability(String s, String r, int distance) {
+		return ecm_.editProbability(s, r, distance);
+	}
+		
 	// Don't call the constructor directly (singleton instance)
 	private NoisyChannelModel(String editsFile) throws Exception {
 		empiricalCostModel = new EmpiricalCostModel(editsFile);

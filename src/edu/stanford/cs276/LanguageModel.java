@@ -8,6 +8,7 @@ import java.io.FileReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+
 import edu.stanford.cs276.util.Dictionary;
 
 
@@ -16,7 +17,7 @@ public class LanguageModel implements Serializable {
 	private static LanguageModel lm_;
 	private Dictionary _unigramCounts;
 	private Dictionary _bigramCounts;
-	private static final double LAMBDA = 0.1;
+	private static final double LAMBDA = 0.01;
 	
 	
 	// Do not call constructor directly since this is a Singleton
@@ -46,7 +47,7 @@ public class LanguageModel implements Serializable {
 			BufferedReader input = new BufferedReader(new FileReader(file));
 			String line = null;
 			while ((line = input.readLine()) != null) {
-				String[] words = line.split(" ");
+				String[] words = line.trim().split(" ");
 				for (int i = 0; i < words.length; i++) {
 					// Put word in dictionary
 					_unigramCounts.add(words[i]);
@@ -87,13 +88,53 @@ public class LanguageModel implements Serializable {
 	 * @param words
 	 * @return
 	 */
-	public double queryProbability(String[] words) {
-		double p = unigramProbability(words[0]);
+	public double queryProbability(String query) {
+		String[] words = query.trim().split(" ");
+		double p = Math.log(unigramProbability(words[0]));
 		for (int i = 0; i < words.length - 1; i++) {
+			// Assign 0 probability to queries with words not in dictionary.
+			if (_unigramCounts.count(words[i]) == 0 || _unigramCounts.count(words[i + 1]) == 0) {
+				return Double.NEGATIVE_INFINITY;
+			}
 			p += bigramProbability(words[i], words[i+1]);
 		}
 		
 		return p;
+	}
+	
+	/**
+	 * Returns true if all words in the query are in the dictionary.
+	 * @param query
+	 * @return
+	 */
+	public boolean isValidQuery(String query) {
+		String[] words = query.trim().split(" ");
+		for (String word : words) {
+			if (_unigramCounts.count(word) == 0) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	/**
+	 * Returns true if the candidate has n or fewer invalid words.
+	 * @param query
+	 * @return
+	 */
+	public boolean hasNOrFewerInvalidWords(String query, int n) {
+		int errorCount = 0;
+		String[] words = query.trim().split(" ");
+		for (String word : words) {
+			if (_unigramCounts.count(word) == 0) {
+				errorCount++;
+			}
+			if (errorCount > n) {
+				return false;
+			}
+		}
+		
+		return true;
 	}
 	
 	// Loads the object (and all associated data) from disk

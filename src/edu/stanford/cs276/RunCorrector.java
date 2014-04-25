@@ -8,7 +8,7 @@ public class RunCorrector {
 
 	public static LanguageModel languageModel;
 	public static NoisyChannelModel nsm;
-	
+	public static SpellingCorrector spellingCorrector;	
 
 	public static void main(String[] args) throws Exception {
 		
@@ -59,10 +59,12 @@ public class RunCorrector {
 		}
 		
 		// Load models from disk
-		languageModel = LanguageModel.load(); 
+		languageModel = LanguageModel.load();
 		nsm = NoisyChannelModel.load();
 		BufferedReader queriesFileReader = new BufferedReader(new FileReader(new File(queryFilePath)));
 		nsm.setProbabilityType(uniformOrEmpirical);
+		
+		spellingCorrector = new SpellingCorrector(languageModel, nsm);
 		
 		int totalCount = 0;
 		int yourCorrectCount = 0;
@@ -74,7 +76,9 @@ public class RunCorrector {
 		 */
 		while ((query = queriesFileReader.readLine()) != null) {
 			
-			String correctedQuery = query;
+//			String correctedQuery = query;
+			String correctedQuery = spellingCorrector.bestCorrection(query);
+//			System.out.println("Best cor: " + correcte);
 			/*
 			 * Your code here
 			 */
@@ -105,6 +109,7 @@ public class RunCorrector {
 		queriesFileReader.close();
 		long endTime   = System.currentTimeMillis();
 		long totalTime = endTime - startTime;
+		System.out.println("Total correct: " + yourCorrectCount + " / " + totalCount);
 		// System.out.println("RUNNING TIME: "+totalTime/1000+" seconds ");
 	}
 }
