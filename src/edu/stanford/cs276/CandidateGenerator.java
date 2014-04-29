@@ -98,10 +98,13 @@ public class CandidateGenerator implements Serializable {
 		
 		Set<Pair<String, Integer>> singleEdits = getSingleEditCandidates(query, 1);
 		candidates.addAll(singleEdits);
+
+		/*
 		// Edit distance of 2
 		for (Pair<String, Integer> cand : singleEdits) {
 			candidates.addAll(getSingleEditCandidates(cand.getFirst(), 2));
 		}
+		*/
 
 		return candidates;
 	}
