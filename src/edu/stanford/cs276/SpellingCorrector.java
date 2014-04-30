@@ -41,7 +41,9 @@ public class SpellingCorrector {
 				bestMatch = candidate.getFirst();
 			}
 		}
-//		System.out.println("best match: " + bestMatch + " score: " + maxScore);
+		if (bestMatch == null) {
+			bestMatch = query;
+		}
 		
 		return bestMatch;
 	}
