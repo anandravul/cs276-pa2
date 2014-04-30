@@ -32,7 +32,8 @@ public class EmpiricalCostModel implements EditCostModel{
 			if (noisy.equals(clean)) continue;
 
 			//Determine the type of error and record its count
-			Pair<Integer,String> edit = findEdits(clean,noisy);
+			Pair<Integer,String> edit = new Pair<Integer,String>(0,"");
+			findEdits(clean,noisy,edit);
 			counts[edit.getFirst()].add(edit.getSecond());
 			//Add each unigram and bigram for the correct query
 			counts[COUNT].add("#"+clean.substring(0,1));
@@ -52,11 +53,18 @@ public class EmpiricalCostModel implements EditCostModel{
 	@Override
 	public double editProbability(String original, String R, int distance) {
 		if (R.equals(original)) return ZERO_EDIT_LOGP;
-		if (distance > 1){
-			System.out.println("Edit distance 2 not implemented yet");
-		}
+		Pair<Integer,String> edit = new Pair<Integer,String>(0,"");
+		Pair<Integer,Integer> idx = findEdits(original,R,edit);
 		//Determine the type of edit and get its counts
-		Pair<Integer,String> edit = findEdits(original, R);
+		double cost = editCost(edit);
+		if (distance>1 && !original.substring(idx.getFirst()).equals(R.substring(idx.getSecond()))){
+			findEdits(original.substring(idx.getFirst()),R.substring(idx.getSecond()),edit);
+			cost+=editCost(edit);	
+		}
+		return cost;
+	}
+	
+	private double editCost(Pair<Integer,String> edit){
 		double denom;
 		switch (edit.getFirst()){
 			case 1:
@@ -70,7 +78,7 @@ public class EmpiricalCostModel implements EditCostModel{
 	}
 
 	//Find the first edit that turns original into R, returns a tuple with editType, originalstring position
-	private Pair<Integer,String> findEdits(String _actual, String _typed) {
+	private Pair<Integer,Integer> findEdits(String _actual, String _typed, Pair<Integer,String> edit) {
 		//Prepend string start char
 		String actual = new String("#" + _actual);
 		String typed = new String("#" + _typed);
@@ -80,17 +88,24 @@ public class EmpiricalCostModel implements EditCostModel{
 		}
 		if (actual.length() < typed.length()){
 			//Insertion
-			return new Pair<Integer,String>(INS,actual.substring(i-1, i) + typed.substring(i,i+1));
+			edit.setFirst(INS);
+			edit.setSecond(actual.substring(i-1, i) + typed.substring(i,i+1));
+			return new Pair<Integer,Integer>(i-1,i);
 		} else if (actual.length() > typed.length()){
 			//Deletion
-			return new Pair<Integer,String>(DEL,actual.substring(i-1, i) + actual.substring(i,i+1));
+			edit.setFirst(DEL);
+			edit.setSecond(actual.substring(i-1, i) + actual.substring(i,i+1));
+			return new Pair<Integer,Integer>(i,i-1);
 		} else if (i+1 < actual.length() && typed.charAt(i) == actual.charAt(i+1) && typed.charAt(i+1) == actual.charAt(i) ) {
 			//Transposition
-			return new Pair<Integer,String>(TRANS,actual.substring(i, i+1) + typed.substring(i+1,i+2));
+			edit.setFirst(TRANS);
+			edit.setSecond(actual.substring(i, i+1) + typed.substring(i+1,i+2));
+			return new Pair<Integer,Integer>(i+1,i+1);
 		} else {
-			if (i==actual.length()) System.out.println(actual+":"+typed);
 			//Substitution
-			return new Pair<Integer,String>(SUB,typed.substring(i, i+1)+ actual.substring(i,i+1));
+			edit.setFirst(SUB);
+			edit.setSecond(typed.substring(i, i+1)+ actual.substring(i,i+1));
+			return new Pair<Integer,Integer>(i,i);
 		}
 	}
 }
