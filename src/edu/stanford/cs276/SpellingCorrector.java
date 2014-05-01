@@ -45,7 +45,7 @@ public class SpellingCorrector {
 			bestMatch = query;
 		}
 		
-		return bestMatch;
+		return bestMatch.trim();
 	}
 
 }

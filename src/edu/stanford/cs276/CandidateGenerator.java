@@ -53,7 +53,7 @@ public class CandidateGenerator implements Serializable {
 					// Insertion
 					cand.insert(i, c);
 					if (_lm.hasNOrFewerInvalidWords(cand.toString(), 0)) {
-						candidates.add(new Pair<String, Integer>(cand.toString(), edits));
+						candidates.add(new Pair<String, Integer>(cand.toString().trim(), edits));
 					}
 					cand.deleteCharAt(i);	
 					
@@ -61,7 +61,7 @@ public class CandidateGenerator implements Serializable {
 					char origChar = cand.charAt(i);
 					cand.setCharAt(i, c);
 					if (_lm.hasNOrFewerInvalidWords(cand.toString(), 0)) {
-						candidates.add(new Pair<String, Integer>(cand.toString(), edits));
+						candidates.add(new Pair<String, Integer>(cand.toString().trim(), edits));
 					}
 					cand.setCharAt(i, origChar);
 				}
@@ -69,7 +69,7 @@ public class CandidateGenerator implements Serializable {
 			// Deletion
 			cand.deleteCharAt(i);
 			if (_lm.hasNOrFewerInvalidWords(cand.toString(), 0)) {
-				candidates.add(new Pair<String, Integer>(cand.toString(), edits));
+				candidates.add(new Pair<String, Integer>(cand.toString().trim(), edits));
 			}
 		}
 		
@@ -82,7 +82,7 @@ public class CandidateGenerator implements Serializable {
 			cand.setCharAt(i, c2);
 			cand.setCharAt(i + 1, c1);
 			if (_lm.hasNOrFewerInvalidWords(cand.toString(), 0)) {
-				candidates.add(new Pair<String, Integer>(cand.toString(), edits));
+				candidates.add(new Pair<String, Integer>(cand.toString().trim(), edits));
 			}
 		}
 		
@@ -101,9 +101,9 @@ public class CandidateGenerator implements Serializable {
 
 		
 		// Edit distance of 2
-		for (Pair<String, Integer> cand : singleEdits) {
-			candidates.addAll(getSingleEditCandidates(cand.getFirst(), 2));
-		}
+//		for (Pair<String, Integer> cand : singleEdits) {
+//			candidates.addAll(getSingleEditCandidates(cand.getFirst(), 2));
+//		}
 		
 		return candidates;
 	}
