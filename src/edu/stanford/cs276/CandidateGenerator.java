@@ -1,8 +1,10 @@
 package edu.stanford.cs276;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 
 import edu.stanford.cs276.util.Pair;
@@ -43,33 +45,32 @@ public class CandidateGenerator implements Serializable {
 	 * @param edits - edit distance between query and the *original* query + 1
 	 * @return
 	 */
-	public Set<Pair<String, Integer>> getSingleEditCandidates(String query, int edits) {
-		Set<Pair<String, Integer>> candidates = new HashSet<Pair<String, Integer>>();	
-
+	public Map<String,Integer> getSingleEditCandidates(String query, int edits) {
+		Map<String,Integer> candidates = new HashMap<String, Integer>();	
 		for (int i = 0; i < query.length(); i++) {
 			StringBuilder cand = new StringBuilder(query);
 			for (char c : alphabet) {
 				if (query.charAt(i) != c) {
 					// Insertion
 					cand.insert(i, c);
-					if (_lm.hasNOrFewerInvalidWords(cand.toString(), 2 - edits)) {
-						candidates.add(new Pair<String, Integer>(cand.toString(), edits));
+					if (!candidates.containsValue(cand.toString()) && _lm.hasNOrFewerInvalidWords(cand.toString(), 2 - edits)) {
+						candidates.put(cand.toString(), edits);
 					}
 					cand.deleteCharAt(i);	
 					
 					// Substitution
 					char origChar = cand.charAt(i);
 					cand.setCharAt(i, c);
-					if (_lm.hasNOrFewerInvalidWords(cand.toString(), 2 - edits)) {
-						candidates.add(new Pair<String, Integer>(cand.toString(), edits));
+					if (!candidates.containsValue(cand.toString()) && _lm.hasNOrFewerInvalidWords(cand.toString(), 2 - edits)) {
+						candidates.put(cand.toString(), edits);
 					}
 					cand.setCharAt(i, origChar);
 				}
 			}
 			// Deletion
 			cand.deleteCharAt(i);
-			if (_lm.hasNOrFewerInvalidWords(cand.toString(), 2 - edits)) {
-				candidates.add(new Pair<String, Integer>(cand.toString(), edits));
+			if (!candidates.containsValue(cand.toString()) && _lm.hasNOrFewerInvalidWords(cand.toString(), 2 - edits)) {
+				candidates.put(cand.toString(), edits);
 			}
 		}
 		
@@ -81,8 +82,8 @@ public class CandidateGenerator implements Serializable {
 			char c2 = cand.charAt(i + 1);
 			cand.setCharAt(i, c2);
 			cand.setCharAt(i + 1, c1);
-			if (_lm.hasNOrFewerInvalidWords(cand.toString(), 2 - edits)) {
-				candidates.add(new Pair<String, Integer>(cand.toString(), edits));
+			if (!candidates.containsValue(cand.toString()) && _lm.hasNOrFewerInvalidWords(cand.toString(), 2 - edits)) {
+				candidates.put(cand.toString(), edits);
 			}
 		}
 		
@@ -90,21 +91,19 @@ public class CandidateGenerator implements Serializable {
 	}
 	
 	// Generate all candidates w/in edit distance 2 of the target query
-	public Set<Pair<String, Integer>> getCandidates(String query) throws Exception {
-		Set<Pair<String, Integer>> candidates = new HashSet<Pair<String, Integer>>();
-		if (_lm.isValidQuery(query)) {
-			candidates.add(new Pair<String, Integer>(query, 0));
+	public Map<String,Integer> getCandidates(String query) throws Exception {
+		Map<String, Integer> candidates = new HashMap<String, Integer>();
+		//Get the single edits
+		Map<String, Integer> singleEdits = getSingleEditCandidates(query, 1);
+		// Get the 2 edits
+		for (String cand : singleEdits.keySet()) {
+			candidates.putAll(getSingleEditCandidates(cand, 2));
 		}
-		
-		Set<Pair<String, Integer>> singleEdits = getSingleEditCandidates(query, 1);
-		candidates.addAll(singleEdits);
-
-		
-		// Edit distance of 2
-		for (Pair<String, Integer> cand : singleEdits) {
-			candidates.addAll(getSingleEditCandidates(cand.getFirst(), 2));
+		//Add in the single edits/ no edits (overwrite double edits with single edit distance)
+		candidates.putAll(singleEdits);
+		if (_lm.isValidQuery(query) && !candidates.containsValue(query)){
+			candidates.put(query,0);
 		}
-		
 		return candidates;
 	}
 

@@ -42,8 +42,8 @@ public class EmpiricalCostModel implements EditCostModel{
 				counts[COUNT].add(clean.substring(i,i+2));
 			}
 			counts[COUNT].add(clean.substring(clean.length()-1,clean.length()));
+			lineSc.close();
 		}
-
 		input.close();
 		System.out.println("Done.");
 	}

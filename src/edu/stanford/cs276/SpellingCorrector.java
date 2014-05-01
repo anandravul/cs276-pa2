@@ -1,5 +1,6 @@
 package edu.stanford.cs276;
 
+import java.util.Map;
 import java.util.Set;
 
 import edu.stanford.cs276.util.Pair;
@@ -26,7 +27,7 @@ public class SpellingCorrector {
 	}
 	
 	public String bestCorrection(String query) {
-		Set<Pair<String, Integer>> candidates = null;
+		Map<String, Integer> candidates = null;
 		try {
 			candidates = _cg.getCandidates(query);
 		} catch (Exception e) {
@@ -34,11 +35,11 @@ public class SpellingCorrector {
 		}
 		double maxScore = Double.NEGATIVE_INFINITY;
 		String bestMatch = null;
-		for (Pair<String, Integer> candidate : candidates) {
-			double score = scoreCandidate(candidate.getFirst(), query, candidate.getSecond());
+		for (String candidate : candidates.keySet()) {
+			double score = scoreCandidate(candidate, query, candidates.get(candidate));
 			if (score > maxScore) {
 				maxScore = score;
-				bestMatch = candidate.getFirst();
+				bestMatch = candidate;
 			}
 		}
 //		System.out.println("best match: " + bestMatch + " score: " + maxScore);
