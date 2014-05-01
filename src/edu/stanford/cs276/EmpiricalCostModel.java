@@ -37,6 +37,7 @@ public class EmpiricalCostModel implements EditCostModel{
 			counts[edit.getFirst()].add(edit.getSecond());
 			//Add each unigram and bigram for the correct query
 			counts[COUNT].add("#"+clean.substring(0,1));
+			counts[COUNT].add("#");
 			for (int i=0;i<clean.length()-1;i++){
 				counts[COUNT].add(clean.substring(i,i+1));
 				counts[COUNT].add(clean.substring(i,i+2));
@@ -51,15 +52,15 @@ public class EmpiricalCostModel implements EditCostModel{
 
 	// You need to update this to calculate the proper empirical cost
 	@Override
-	public double editProbability(String original, String R, int distance) {
-		if (R.equals(original)) return ZERO_EDIT_LOGP;
+	public double editProbability(String candidate, String typed, int distance) {
+		if (candidate.equals(typed)) return ZERO_EDIT_LOGP;
 		Pair<Integer,String> edit = new Pair<Integer,String>(0,"");
-		Pair<Integer,Integer> idx = findEdits(original,R,edit);
+		Pair<Integer,Integer> idx = findEdits(candidate,typed,edit);
 		//Determine the type of edit and get its counts
 		double cost = editCost(edit);
-		if (distance>1 && !original.substring(idx.getFirst()).equals(R.substring(idx.getSecond()))){
-			findEdits(original.substring(idx.getFirst()),R.substring(idx.getSecond()),edit);
-			cost+=editCost(edit);	
+		if (distance>1 && !candidate.substring(idx.getFirst()).equals(typed.substring(idx.getSecond()))){
+			findEdits(candidate.substring(idx.getFirst()),typed.substring(idx.getSecond()),edit);
+			cost+=editCost(edit);
 		}
 		return cost;
 	}
@@ -99,12 +100,12 @@ public class EmpiricalCostModel implements EditCostModel{
 		} else if (i+1 < actual.length() && typed.charAt(i) == actual.charAt(i+1) && typed.charAt(i+1) == actual.charAt(i) ) {
 			//Transposition
 			edit.setFirst(TRANS);
-			edit.setSecond(actual.substring(i, i+1) + typed.substring(i+1,i+2));
+			edit.setSecond(actual.substring(i, i+1) + actual.substring(i+1,i+2));
 			return new Pair<Integer,Integer>(i+1,i+1);
 		} else {
 			//Substitution
 			edit.setFirst(SUB);
-			edit.setSecond(typed.substring(i, i+1)+ actual.substring(i,i+1));
+			edit.setSecond(actual.substring(i, i+1)+ typed.substring(i,i+1));
 			return new Pair<Integer,Integer>(i,i);
 		}
 	}
